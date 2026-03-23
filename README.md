@@ -2,7 +2,7 @@
 
 > Bad data causes bad models. DataReady audits your dataset, explains every quality issue, recommends the right fix based on your data's actual structure, and shows the before/after impact — so your model gets the best possible input.
 
-**Live Demo:** [Add your Render URL here after deploy]
+**Live Demo:** https://data-cleaning-z65l.onrender.com
 
 ---
 

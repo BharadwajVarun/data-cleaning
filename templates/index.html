@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataReady — Smart Data Preprocessing</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9f9f7; color: #111; font-size: 14px; }
+
+nav { background: #111; color: #fff; padding: 0 2rem; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+nav .logo { font-weight: 600; font-size: 1.1rem; letter-spacing: -0.02em; }
+nav .logo span { color: #818cf8; }
+nav a { color: #888; text-decoration: none; font-size: 0.78rem; }
+nav a:hover { color: #fff; }
+
+.hero { background: #111; color: #fff; padding: 3rem 2rem 2.5rem; }
+.hero h1 { font-size: 2rem; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+.hero p { color: #888; font-size: 0.9rem; max-width: 520px; line-height: 1.6; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+/* Upload */
+.upload-zone {
+  border: 2px dashed #ddd; border-radius: 8px; padding: 3rem 2rem;
+  text-align: center; background: #fff; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s; margin-bottom: 2rem;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: #818cf8; background: #f5f3ff; }
+.upload-zone input { display: none; }
+.upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+.upload-zone h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.4rem; }
+.upload-zone p { color: #888; font-size: 0.82rem; }
+.upload-zone .btn { margin-top: 1rem; }
+
+/* Buttons */
+.btn {
+  display: inline-block; padding: 0.55rem 1.2rem;
+  border-radius: 4px; font-size: 0.78rem; font-weight: 500;
+  border: none; cursor: pointer; transition: all 0.15s; text-decoration: none;
+}
+.btn-dark { background: #111; color: #fff; }
+.btn-dark:hover { background: #333; }
+.btn-green { background: #16a34a; color: #fff; }
+.btn-green:hover { background: #15803d; }
+.btn-outline { background: transparent; border: 1px solid #ddd; color: #555; }
+.btn-outline:hover { border-color: #111; color: #111; }
+
+/* Cards */
+.card { background: #fff; border: 1px solid #e8e8e4; border-radius: 6px; padding: 1.4rem 1.6rem; margin-bottom: 1.2rem; }
+.card h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; color: #111; }
+
+/* Metrics */
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.2rem; }
+.metric { background: #fff; border: 1px solid #e8e8e4; border-radius: 6px; padding: 1rem 1.2rem; text-align: center; }
+.metric-val { font-size: 1.8rem; font-weight: 500; color: #111; line-height: 1; }
+.metric-label { font-size: 0.68rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.3rem; }
+
+/* Issues */
+.issue { padding: 0.9rem 1rem; border-radius: 0 4px 4px 0; margin-bottom: 0.6rem; display: flex; align-items: flex-start; gap: 0.8rem; }
+.issue.critical { border-left: 4px solid #dc2626; background: #fff5f5; }
+.issue.warning { border-left: 4px solid #d97706; background: #fffbeb; }
+.issue.ok { border-left: 4px solid #16a34a; background: #f0fdf4; }
+.issue-check { margin-top: 0.1rem; cursor: pointer; width: 16px; height: 16px; flex-shrink: 0; }
+.issue-body { flex: 1; }
+.issue-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.2rem; }
+.issue-detail { font-size: 0.78rem; color: #666; }
+.issue-strategy { font-size: 0.78rem; color: #444; margin-top: 0.3rem; }
+.issue-reason { font-size: 0.75rem; color: #888; font-style: italic; }
+.badge { display: inline-block; font-size: 0.62rem; padding: 0.15rem 0.5rem; border-radius: 2px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin-left: 0.4rem; }
+.badge-critical { background: #fee2e2; color: #dc2626; }
+.badge-warning { background: #fef3c7; color: #d97706; }
+
+/* Applied fixes */
+.fix-applied { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 0.45rem 0.9rem; font-size: 0.82rem; color: #15803d; margin-bottom: 0.4rem; }
+
+/* Before/after */
+.compare { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.compare-item { text-align: center; }
+.compare-label { font-size: 0.68rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+.compare-vals { display: flex; align-items: center; justify-content: center; gap: 0.8rem; }
+.compare-before { font-size: 1.2rem; color: #dc2626; text-decoration: line-through; }
+.compare-arrow { color: #888; }
+.compare-after { font-size: 1.2rem; font-weight: 600; color: #16a34a; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+th { background: #f4f4f2; text-align: left; padding: 0.6rem 0.8rem; font-weight: 600; border-bottom: 1px solid #e8e8e4; color: #555; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+td { padding: 0.55rem 0.8rem; border-bottom: 1px solid #f0f0ee; color: #333; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafaf8; }
+
+/* Charts */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.chart-box { background: #fff; border: 1px solid #e8e8e4; border-radius: 6px; padding: 1.2rem; }
+.chart-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem; }
+.chart-meta { font-size: 0.7rem; color: #888; margin-bottom: 0.8rem; }
+.bar-chart { display: flex; align-items: flex-end; gap: 2px; height: 80px; }
+.bar { flex: 1; background: #818cf8; border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.3s; }
+.bar:hover { background: #6366f1; }
+
+/* Correlation */
+.corr-table { overflow-x: auto; }
+.corr-table table { font-size: 0.72rem; }
+.corr-table th, .corr-table td { padding: 0.4rem 0.6rem; text-align: center; min-width: 60px; }
+
+/* Sections */
+.section-label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: #888; margin-bottom: 0.8rem; margin-top: 2rem; }
+.divider { height: 1px; background: #e8e8e4; margin: 2rem 0; }
+
+/* Hidden */
+.hidden { display: none !important; }
+
+/* Loading */
+.loading { text-align: center; padding: 2rem; color: #888; font-size: 0.85rem; }
+
+/* Action bar */
+.action-bar { display: flex; gap: 0.8rem; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .metrics { grid-template-columns: 1fr 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .compare { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Data<span>Ready</span></div>
+  <a href="https://portfolio-pi-swart-tuos89wqp3.vercel.app/" target="_blank">Built by Varun Bharadwaj →</a>
+</nav>
+
+<div class="hero">
+  <h1>Smart Data Preprocessing</h1>
+  <p>Upload a CSV — get smart cleaning recommendations based on your data's actual structure. No guessing. Fix the right things, the right way, before training your model.</p>
+</div>
+
+<div class="main">
+
+  <!-- UPLOAD -->
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".csv" onchange="handleFile(this.files[0])">
+    <div class="upload-icon">📂</div>
+    <h3>Drop your CSV file here</h3>
+    <p>or click to browse</p>
+    <button class="btn btn-dark" style="margin-top:1rem;" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">Choose File</button>
+  </div>
+
+  <div id="loadingMsg" class="loading hidden">Analysing your dataset...</div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden">
+
+    <!-- OVERVIEW -->
+    <div class="section-label">Dataset Overview</div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-val" id="mRows">—</div><div class="metric-label">Rows</div></div>
+      <div class="metric"><div class="metric-val" id="mCols">—</div><div class="metric-label">Columns</div></div>
+      <div class="metric"><div class="metric-val" id="mNulls">—</div><div class="metric-label">Total Nulls</div></div>
+      <div class="metric"><div class="metric-val" id="mNullRate">—</div><div class="metric-label">Null Rate</div></div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="card">
+      <h2>Data Preview (first 10 rows)</h2>
+      <div class="table-wrap" id="previewTable"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- AUDIT -->
+    <div class="section-label">Data Quality Audit</div>
+    <div id="auditResults"></div>
+
+    <!-- APPLY -->
+    <div class="card" id="applyCard">
+      <h2>Apply Fixes</h2>
+      <p style="font-size:0.82rem; color:#666; margin-bottom:1rem;">All recommended fixes are selected by default. Uncheck any you want to skip.</p>
+      <div class="action-bar">
+        <button class="btn btn-dark" onclick="applyFixes()">✅ Apply Selected Fixes</button>
+        <button class="btn btn-outline" onclick="resetAll()">🔄 Reset to Original</button>
+        <button class="btn btn-outline" onclick="selectAll()">Select All</button>
+        <button class="btn btn-outline" onclick="selectNone()">Select None</button>
+      </div>
+    </div>
+
+    <!-- APPLIED RESULTS -->
+    <div id="appliedSection" class="hidden">
+      <div class="section-label">Fixes Applied</div>
+      <div id="appliedList"></div>
+      <div class="card" style="margin-top:1rem;">
+        <h2>Before vs After</h2>
+        <div class="compare" id="compareSection"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DISTRIBUTIONS -->
+    <div class="section-label">Distributions</div>
+    <div class="chart-grid" id="distCharts"></div>
+
+    <div class="divider"></div>
+
+    <!-- CORRELATION -->
+    <div class="section-label">Correlation Matrix</div>
+    <div class="card" id="corrSection">
+      <div id="corrTable"></div>
+      <div id="strongCorr" style="margin-top:1rem;"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DOWNLOAD -->
+    <div class="section-label">Export</div>
+    <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:600; margin-bottom:0.3rem;">Download Cleaned Dataset</div>
+        <div style="font-size:0.82rem; color:#888;">CSV format — ready for model training</div>
+      </div>
+      <a href="/download" class="btn btn-green">⬇ Download CSV</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentIssues = [];
+let currentData = {};
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) handleFile(file);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('loadingMsg').classList.remove('hidden');
+  document.getElementById('results').classList.add('hidden');
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/upload', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('loadingMsg').classList.add('hidden');
+      if (data.error) { alert('Error: ' + data.error); return; }
+      currentData = data;
+      currentIssues = data.issues;
+      renderResults(data);
+    })
+    .catch(err => {
+      document.getElementById('loadingMsg').classList.add('hidden');
+      alert('Upload failed: ' + err);
+    });
+}
+
+function renderResults(data) {
+  document.getElementById('results').classList.remove('hidden');
+  document.getElementById('appliedSection').classList.add('hidden');
+
+  // Metrics
+  document.getElementById('mRows').textContent = data.rows.toLocaleString();
+  document.getElementById('mCols').textContent = data.cols;
+  document.getElementById('mNulls').textContent = data.nulls.toLocaleString();
+  document.getElementById('mNullRate').textContent = data.null_rate + '%';
+
+  // Preview table
+  if (data.preview.length > 0) {
+    const cols = Object.keys(data.preview[0]);
+    let html = '<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    data.preview.forEach(row => {
+      html += '<tr>' + cols.map(c => `<td>${row[c] === null || row[c] === '' ? '<span style="color:#ccc">null</span>' : row[c]}</td>`).join('') + '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('previewTable').innerHTML = html;
+  }
+
+  // Audit
+  const auditDiv = document.getElementById('auditResults');
+  if (!data.issues || data.issues.length === 0) {
+    auditDiv.innerHTML = '<div class="issue ok"><div class="issue-body"><div class="issue-title">✓ No issues found — dataset looks clean and model-ready.</div></div></div>';
+  } else {
+    const sorted = [...data.issues].sort((a,b) => a.severity === 'critical' ? -1 : 1);
+    auditDiv.innerHTML = sorted.map(issue => {
+      const icon = issue.severity === 'critical' ? '🔴' : '🟡';
+      const key = issue.type === 'duplicate' ? 'ALL ROWS' : issue.col;
+      return `
+      <div class="issue ${issue.severity}">
+        <input type="checkbox" class="issue-check" id="chk_${key}" value="${key}" checked>
+        <div class="issue-body">
+          <div class="issue-title">
+            ${icon} <strong>${issue.col}</strong>
+            <span class="badge badge-${issue.severity}">${issue.severity}</span>
+            — ${issue.detail}
+          </div>
+          <div class="issue-strategy">Recommended: <strong>${issue.strategy}</strong></div>
+          <div class="issue-reason">${issue.reason}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Distributions
+  const distDiv = document.getElementById('distCharts');
+  distDiv.innerHTML = '';
+  Object.entries(data.distributions || {}).forEach(([col, d]) => {
+    const maxH = Math.max(...d.hist);
+    const bars = d.hist.map(v => {
+      const h = maxH > 0 ? Math.round((v / maxH) * 80) : 2;
+      return `<div class="bar" style="height:${h}px" title="${v} values"></div>`;
+    }).join('');
+    const skewLabel = Math.abs(d.skew) > 1 ? `⚠️ skewed (${d.skew})` : `✓ symmetric (${d.skew})`;
+    distDiv.innerHTML += `
+    <div class="chart-box">
+      <div class="chart-title">${col}</div>
+      <div class="chart-meta">skew: ${skewLabel} · mean: ${d.mean} · median: ${d.median}</div>
+      <div class="bar-chart">${bars}</div>
+    </div>`;
+  });
+  if (Object.keys(data.distributions || {}).length === 0) {
+    distDiv.innerHTML = '<p style="color:#888; font-size:0.85rem;">No numeric columns found.</p>';
+  }
+
+  // Correlation
+  const corrDiv = document.getElementById('corrTable');
+  const strongDiv = document.getElementById('strongCorr');
+  const corr = data.corr || {};
+  if (corr.cols && corr.cols.length >= 2) {
+    const cols = corr.cols;
+    const matrix = corr.matrix;
+
+    // Color helper
+    function corrColor(v) {
+      if (v === null || isNaN(v)) return '#f4f4f2';
+      const abs = Math.abs(v);
+      if (abs > 0.9) return v > 0 ? '#dcfce7' : '#fee2e2';
+      if (abs > 0.7) return v > 0 ? '#d1fae5' : '#fecaca';
+      if (abs > 0.4) return v > 0 ? '#f0fdf4' : '#fff5f5';
+      return '#fafaf8';
+    }
+
+    let html = '<div class="corr-table"><table><thead><tr><th></th>';
+    cols.forEach(c => { html += `<th>${c}</th>`; });
+    html += '</tr></thead><tbody>';
+    matrix.forEach((row, i) => {
+      html += `<tr><th style="text-align:left;">${cols[i]}</th>`;
+      row.forEach((val, j) => {
+        const bg = corrColor(val);
+        const display = i === j ? '—' : val.toFixed(2);
+        html += `<td style="background:${bg}; font-weight:${Math.abs(val) > 0.7 ? '600' : '400'}">${display}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<p style="font-size:0.75rem; color:#888; margin-top:0.6rem;">Values close to +1 or -1 indicate strong correlation. High correlation between features can cause multicollinearity issues in your model.</p>';
+    corrDiv.innerHTML = html;
+
+    // Strong pairs
+    let strong = [];
+    matrix.forEach((row, i) => {
+      row.forEach((val, j) => {
+        if (j > i && Math.abs(val) > 0.7) strong.push([cols[i], cols[j], val]);
+      });
+    });
+    if (strong.length > 0) {
+      strongDiv.innerHTML = '<div style="font-weight:600; font-size:0.82rem; margin-bottom:0.5rem;">Highly correlated pairs (|r| > 0.7):</div>' +
+        strong.map(([a, b, v]) => {
+          const icon = Math.abs(v) > 0.9 ? '🔴' : '🟡';
+          return `<div style="font-size:0.8rem; margin-bottom:0.3rem;">${icon} <code>${a}</code> ↔ <code>${b}</code> : <strong>${v.toFixed(2)}</strong> — consider dropping one before training</div>`;
+        }).join('');
+    } else {
+      strongDiv.innerHTML = '<div style="font-size:0.8rem; color:#16a34a;">✓ No highly correlated pairs found.</div>';
+    }
+  } else {
+    corrDiv.innerHTML = '<p style="color:#888; font-size:0.85rem;">Need at least 2 numeric columns for correlation matrix.</p>';
+  }
+
+  window.scrollTo({ top: 300, behavior: 'smooth' });
+}
+
+function applyFixes() {
+  const checkboxes = document.querySelectorAll('.issue-check:checked');
+  const selected = Array.from(checkboxes).map(c => c.value);
+  if (selected.length === 0) { alert('Select at least one fix to apply.'); return; }
+
+  fetch('/apply', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected })
+  })
+  .then(r => r.json())
+  .then(data => {
+    const sec = document.getElementById('appliedSection');
+    sec.classList.remove('hidden');
+
+    const list = document.getElementById('appliedList');
+    list.innerHTML = data.applied.map(f => `<div class="fix-applied">✓ ${f}</div>`).join('');
+
+    const cmp = document.getElementById('compareSection');
+    const metrics = ['rows', 'cols', 'nulls'];
+    const labels = ['Rows', 'Columns', 'Nulls'];
+    cmp.innerHTML = metrics.map((m, i) => {
+      const b = data.before[m];
+      const a = data.after[m];
+      const diff = a - b;
+      const diffStr = diff === 0 ? '' : (diff > 0 ? `+${diff}` : `${diff}`);
+      return `
+      <div class="compare-item">
+        <div class="compare-label">${labels[i]}</div>
+        <div class="compare-vals">
+          <div class="compare-before">${b.toLocaleString()}</div>
+          <div class="compare-arrow">→</div>
+          <div class="compare-after">${a.toLocaleString()} ${diffStr ? `<span style="font-size:0.75rem; color:#888;">(${diffStr})</span>` : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function resetAll() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('appliedSection').classList.add('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function selectAll() { document.querySelectorAll('.issue-check').forEach(c => c.checked = true); }
+function selectNone() { document.querySelectorAll('.issue-check').forEach(c => c.checked = false); }
+</script>
+
+</body>
+</html>
